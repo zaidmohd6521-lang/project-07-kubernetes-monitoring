@@ -1,0 +1,57 @@
+alertmanager:
+  enabled: false
+
+prometheus-pushgateway:
+  enabled: false
+
+prometheus-node-exporter:
+  enabled: false
+
+kube-state-metrics:
+  enabled: true
+  resources:
+    requests:
+      cpu: 5m
+      memory: 32Mi
+    limits:
+      cpu: 100m
+      memory: 96Mi
+
+configmapReload:
+  prometheus:
+    resources:
+      requests:
+        cpu: 5m
+        memory: 16Mi
+      limits:
+        cpu: 50m
+        memory: 32Mi
+
+server:
+  global:
+    scrape_interval: 15s
+    evaluation_interval: 15s
+  retention: 6h
+  persistentVolume:
+    enabled: false
+  resources:
+    requests:
+      cpu: 50m
+      memory: 192Mi
+    limits:
+      cpu: 250m
+      memory: 384Mi
+
+serverFiles:
+  alerting_rules.yml:
+    groups:
+      - name: kind-node-health
+        rules:
+          - alert: KindNodeCordoned
+            expr: kube_node_spec_unschedulable == 1
+            for: 15s
+            labels:
+              severity: warning
+            annotations:
+              summary: "A Kubernetes node is cordoned"
+              description: "Node {{ $labels.node }} is marked unschedulable."

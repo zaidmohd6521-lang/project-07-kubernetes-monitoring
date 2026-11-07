@@ -1,0 +1,93 @@
+adminUser: admin
+
+persistence:
+  enabled: false
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 128Mi
+  limits:
+    cpu: 250m
+    memory: 256Mi
+
+service:
+  type: ClusterIP
+
+sidecar:
+  dashboards:
+    enabled: true
+    label: grafana_dashboard
+    labelValue: "1"
+
+datasources:
+  datasources.yaml:
+    apiVersion: 1
+    datasources:
+      - name: Prometheus
+        type: prometheus
+        access: proxy
+        url: http://prometheus-server.monitoring.svc.cluster.local
+        uid: prometheus
+        isDefault: true
+
+dashboards:
+  default:
+    kubernetes-overview:
+      json: |
+        {
+          "annotations": {"list": []},
+          "editable": true,
+          "panels": [
+            {
+              "datasource": {"type": "prometheus", "uid": "prometheus"},
+              "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []},
+              "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+              "id": 1,
+              "targets": [{"expr": "kube_deployment_spec_replicas{namespace=\"project-06\",deployment=\"project-06-web\"}", "refId": "A"}],
+              "title": "Desired replicas",
+              "type": "timeseries"
+            },
+            {
+              "datasource": {"type": "prometheus", "uid": "prometheus"},
+              "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []},
+              "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+              "id": 2,
+              "targets": [{"expr": "kube_deployment_status_replicas_available{namespace=\"project-06\",deployment=\"project-06-web\"}", "refId": "A"}],
+              "title": "Available replicas",
+              "type": "timeseries"
+            },
+            {
+              "datasource": {"type": "prometheus", "uid": "prometheus"},
+              "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []},
+              "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+              "id": 3,
+              "targets": [{"expr": "sum(kube_pod_status_phase{namespace=\"project-06\",phase=\"Running\"})", "refId": "A"}],
+              "title": "Running pods",
+              "type": "timeseries"
+            },
+            {
+              "datasource": {"type": "prometheus", "uid": "prometheus"},
+              "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []},
+              "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+              "id": 4,
+              "targets": [{"expr": "sum(kube_pod_container_status_restarts_total{namespace=\"project-06\"})", "refId": "A"}],
+              "title": "Container restarts",
+              "type": "timeseries"
+            }
+          ],
+          "schemaVersion": 39,
+          "time": {"from": "now-15m", "to": "now"},
+          "title": "Kubernetes Lab Overview",
+          "uid": "k8s-lab-overview",
+          "version": 1
+        }
+
+startupProbe:
+  httpGet:
+    path: /api/health
+    port: grafana
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 30
